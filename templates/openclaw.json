@@ -1,0 +1,55 @@
+{
+  "$schema": "https://docs.openclaw.ai/schema/openclaw.json",
+  "agents": {
+    "defaults": {
+      "model": {
+        "primary": "anthropic/claude-sonnet-4-6"
+      },
+      "heartbeat": {
+        "every": "0m"
+      }
+    },
+    "list": [
+      {
+        "id": "ceo",
+        "workspace": "{{PROJECT_DIR}}",
+        "model": {
+          "primary": "anthropic/claude-opus-4-6"
+        },
+        "heartbeat": {
+          "every": "1h"
+        }
+      },
+      {
+        "id": "scout",
+        "workspace": "{{PROJECT_DIR}}/agents/scout"
+      },
+      {
+        "id": "pm",
+        "workspace": "{{PROJECT_DIR}}/agents/pm"
+      },
+      {
+        "id": "design",
+        "workspace": "{{PROJECT_DIR}}/agents/design"
+      },
+      {
+        "id": "engineer",
+        "workspace": "{{PROJECT_DIR}}/agents/engineer",
+        "model": {
+          "primary": "openai-codex/gpt-5.3-codex"
+        }
+      },
+      {
+        "id": "marketing",
+        "workspace": "{{PROJECT_DIR}}/agents/marketing"
+      },
+      {
+        "id": "ops",
+        "workspace": "{{PROJECT_DIR}}/agents/ops"
+      }
+    ]
+  },
+  "session": {
+    "dmScope": "per-channel-peer"
+  }
+}

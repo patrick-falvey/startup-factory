@@ -1,0 +1,343 @@
+#!/usr/bin/env zsh
+set -euo pipefail
+setopt nullglob
+
+# ============================================================
+# sf — Startup Factory CLI
+# Manage startup factory projects
+# ============================================================
+
+VERSION="0.1.0"
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+BOLD='\033[1m'
+DIM='\033[2m'
+NC='\033[0m'
+
+SCRIPT_DIR="${0:a:h}"
+
+usage() {
+  echo -e "${BOLD}sf${NC} — Startup Factory CLI v${VERSION}"
+  echo ""
+  echo -e "${BOLD}USAGE${NC}"
+  echo "  sf <command> [options]"
+  echo ""
+  echo -e "${BOLD}COMMANDS${NC}"
+  echo "  init <idea>         Initialize a new startup project"
+  echo "  status [dir]        Show project status and phase progress"
+  echo "  approve [dir]       Approve current phase gate and advance"
+  echo "  pivot [dir]         Mark current phase for pivot/redo"
+  echo "  list                List all startup projects"
+  echo "  agents [dir]        Show agent roster and health"
+  echo "  outputs [dir]       List all generated artifacts"
+  echo "  log [dir]           Show recent agent activity"
+  echo ""
+  echo -e "${BOLD}OPTIONS${NC}"
+  echo "  -d, --dir DIR       Project directory (default: current dir or ~/startups)"
+  echo "  -h, --help          Show this help"
+  echo "  -v, --version       Show version"
+  echo ""
+  echo -e "${BOLD}EXAMPLES${NC}"
+  echo "  sf init \"AI pet nutrition advisor\""
+  echo "  sf status ~/startups/pet-nutrition"
+  echo "  sf approve"
+  echo "  sf list"
+}
+
+# Resolve project directory
+resolve_project() {
+  local dir="${1:-}"
+  
+  # If explicit dir provided, use it
+  if [[ -n "$dir" && -f "$dir/STARTUP.md" ]]; then
+    echo "$dir"
+    return 0
+  fi
+  
+  # Check current directory
+  if [[ -f "./STARTUP.md" ]]; then
+    echo "$(pwd)"
+    return 0
+  fi
+  
+  # Check if explicit dir is a project name under ~/startups
+  if [[ -n "$dir" && -f "${HOME}/startups/$dir/STARTUP.md" ]]; then
+    echo "${HOME}/startups/$dir"
+    return 0
+  fi
+  
+  echo ""
+  return 1
+}
+
+# ============================================================
+# COMMANDS
+# ============================================================
+
+cmd_init() {
+  exec "$SCRIPT_DIR/sf-init.sh" "$@"
+}
+
+cmd_status() {
+  local project_dir
+  project_dir=$(resolve_project "${1:-}") || {
+    echo -e "${RED}Error: Not in a startup factory project. Specify a directory or cd into one.${NC}"
+    exit 1
+  }
+  
+  echo -e "${CYAN}${BOLD}🏭 Startup Factory — Project Status${NC}"
+  echo ""
+  
+  # Read project info from STARTUP.md
+  local idea phase
+  idea=$(grep "^## Idea" "$project_dir/STARTUP.md" -A1 | tail -1)
+  phase=$(grep "^- \*\*Phase:\*\*" "$project_dir/STARTUP.md" | sed 's/.*\*\*Phase:\*\* //')
+  
+  echo -e "  ${BOLD}Project:${NC}  $(basename "$project_dir")"
+  echo -e "  ${BOLD}Idea:${NC}     $idea"
+  echo -e "  ${BOLD}Phase:${NC}    $phase"
+  echo -e "  ${BOLD}Location:${NC} $project_dir"
+  echo ""
+  
+  # Show phase progress table
+  echo -e "${BOLD}Phase Progress:${NC}"
+  grep "^|" "$project_dir/STARTUP.md" 2>/dev/null | head -10
+  echo ""
+  
+  # Count outputs
+  local research_count product_count design_count code_count marketing_count ops_count
+  research_count=$(find "$project_dir/outputs/research" -type f 2>/dev/null | wc -l | tr -d ' ')
+  product_count=$(find "$project_dir/outputs/product" -type f 2>/dev/null | wc -l | tr -d ' ')
+  design_count=$(find "$project_dir/outputs/design" -type f 2>/dev/null | wc -l | tr -d ' ')
+  code_count=$(find "$project_dir/outputs/code" -type f 2>/dev/null | wc -l | tr -d ' ')
+  marketing_count=$(find "$project_dir/outputs/marketing" -type f 2>/dev/null | wc -l | tr -d ' ')
+  ops_count=$(find "$project_dir/outputs/ops" -type f 2>/dev/null | wc -l | tr -d ' ')
+  
+  echo -e "${BOLD}Artifacts:${NC}"
+  echo "  📊 Research:  $research_count files"
+  echo "  📋 Product:   $product_count files"
+  echo "  🎨 Design:    $design_count files"
+  echo "  💻 Code:      $code_count files"
+  echo "  📣 Marketing: $marketing_count files"
+  echo "  💰 Ops:       $ops_count files"
+  echo ""
+  
+  # Show recent memory entries
+  local -a mem_files
+  mem_files=("$project_dir"/memory/*.md(N))
+  if (( ${#mem_files} > 0 )); then
+    echo -e "${BOLD}Recent Activity:${NC}"
+    for f in ${(On)mem_files[1,3]}; do
+      echo "  $(basename "$f")"
+    done
+    echo ""
+  fi
+}
+
+cmd_approve() {
+  local project_dir
+  project_dir=$(resolve_project "${1:-}") || {
+    echo -e "${RED}Error: Not in a startup factory project.${NC}"
+    exit 1
+  }
+  
+  local phase
+  phase=$(grep "^- \*\*Phase:\*\*" "$project_dir/STARTUP.md" | sed 's/.*\*\*Phase:\*\* //')
+  
+  echo -e "${GREEN}${BOLD}✅ Approving phase gate: $phase${NC}"
+  echo ""
+  
+  local date_now
+  date_now=$(date '+%Y-%m-%d %H:%M')
+  
+  # Update the current phase's approval in STARTUP.md
+  # Mark current 🔄 as ✅, mark next ⏸️ as 🔄
+  sed -i '' "s/| 🔄 In Progress/| ✅ Complete/g" "$project_dir/STARTUP.md"
+  
+  # Log the decision
+  echo "- [$date_now] **APPROVED:** Phase gate for $phase" >> "$project_dir/STARTUP.md"
+  
+  echo -e "Phase ${BOLD}$phase${NC} approved at $date_now"
+  echo -e "The CEO agent will advance to the next phase on its next heartbeat."
+  echo ""
+  echo -e "${DIM}Tip: Send a message to the CEO agent to advance immediately:${NC}"
+  echo "  openclaw agent --workspace $project_dir --message \"Phase approved. Advance to next phase.\""
+}
+
+cmd_list() {
+  local startups_dir="${HOME}/startups"
+  
+  if [[ ! -d "$startups_dir" ]]; then
+    echo -e "${YELLOW}No startups found in ~/startups/${NC}"
+    echo "Create one with: sf init \"Your idea here\""
+    return
+  fi
+  
+  echo -e "${CYAN}${BOLD}🏭 Startup Factory — All Projects${NC}"
+  echo ""
+  
+  local count=0
+  for dir in "$startups_dir"/*/; do
+    if [[ -f "$dir/STARTUP.md" ]]; then
+      count=$((count + 1))
+      local name phase idea
+      name=$(basename "$dir")
+      phase=$(grep "^- \*\*Phase:\*\*" "$dir/STARTUP.md" 2>/dev/null | sed 's/.*\*\*Phase:\*\* //' || echo "Unknown")
+      idea=$(grep "^## Idea" "$dir/STARTUP.md" -A1 2>/dev/null | tail -1 || echo "")
+      
+      echo -e "  ${BOLD}$name${NC}"
+      echo -e "    Phase: $phase"
+      echo -e "    Idea:  ${DIM}$idea${NC}"
+      echo ""
+    fi
+  done
+  
+  if [[ $count -eq 0 ]]; then
+    echo -e "  ${DIM}No projects found.${NC}"
+    echo "  Create one with: sf init \"Your idea here\""
+  else
+    echo -e "  ${DIM}$count project(s) found.${NC}"
+  fi
+}
+
+cmd_agents() {
+  local project_dir
+  project_dir=$(resolve_project "${1:-}") || {
+    echo -e "${RED}Error: Not in a startup factory project.${NC}"
+    exit 1
+  }
+  
+  echo -e "${CYAN}${BOLD}🏭 Agent Roster${NC}"
+  echo ""
+  
+  _show_agent() {
+    local id=$1 emoji=$2 role=$3
+    local workspace="$project_dir/agents/$id"
+    [[ "$id" == "ceo" ]] && workspace="$project_dir"
+    local memory_count
+    memory_count=$(wc -l < "$workspace/MEMORY.md" 2>/dev/null | tr -d ' ' || echo "0")
+    printf "  %s ${BOLD}%s${NC} — %s\n" "$emoji" "$id" "$role"
+    printf "     Workspace: %s\n" "$workspace"
+    printf "     Memory: %s lines\n\n" "$memory_count"
+  }
+  
+  _show_agent "ceo"       "CEO"  "Orchestrator"
+  _show_agent "scout"     "SCT"  "Market Research"
+  _show_agent "pm"        "PM"   "Product Management"
+  _show_agent "design"    "DSN"  "UI/UX Design"
+  _show_agent "engineer"  "ENG"  "Full-Stack Engineering"
+  _show_agent "marketing" "MKT"  "Growth & GTM"
+  _show_agent "ops"       "OPS"  "Finance & Operations"
+}
+
+cmd_outputs() {
+  local project_dir
+  project_dir=$(resolve_project "${1:-}") || {
+    echo -e "${RED}Error: Not in a startup factory project.${NC}"
+    exit 1
+  }
+  
+  echo -e "${CYAN}${BOLD}🏭 Generated Artifacts${NC}"
+  echo ""
+  
+  local phases=("research:🔬" "product:📋" "design:🎨" "code:👨‍💻" "marketing:📣" "ops:💰")
+  
+  for entry in "${phases[@]}"; do
+    local phase emoji
+    phase="${entry%%:*}"
+    emoji="${entry#*:}"
+    
+    local dir="$project_dir/outputs/$phase"
+    if [[ -d "$dir" ]]; then
+      local files
+      files=$(find "$dir" -type f -name "*.md" -o -name "*.html" -o -name "*.js" -o -name "*.css" -o -name "*.json" 2>/dev/null)
+      if [[ -n "$files" ]]; then
+        echo -e "  $emoji ${BOLD}$phase${NC}"
+        echo "$files" | while read -r f; do
+          echo "     $(echo "$f" | sed "s|$dir/||")"
+        done
+        echo ""
+      fi
+    fi
+  done
+}
+
+cmd_log() {
+  local project_dir
+  project_dir=$(resolve_project "${1:-}") || {
+    echo -e "${RED}Error: Not in a startup factory project.${NC}"
+    exit 1
+  }
+  
+  echo -e "${CYAN}${BOLD}🏭 Recent Activity${NC}"
+  echo ""
+  
+  # Show recent git commits
+  (cd "$project_dir" && git log --oneline -10 2>/dev/null) || echo "  No git history."
+  echo ""
+  
+  # Show recent memory files
+  local recent
+  recent=$(ls -t "$project_dir/memory/"*.md 2>/dev/null | head -5)
+  if [[ -n "$recent" ]]; then
+    echo -e "${BOLD}Recent Memory:${NC}"
+    for f in $recent; do
+      echo "  $(basename "$f") — $(head -1 "$f")"
+    done
+  fi
+}
+
+# ============================================================
+# DISPATCH
+# ============================================================
+
+case "${1:-help}" in
+  init)
+    shift
+    cmd_init "$@"
+    ;;
+  status)
+    shift
+    cmd_status "$@"
+    ;;
+  approve)
+    shift
+    cmd_approve "$@"
+    ;;
+  list)
+    cmd_list
+    ;;
+  agents)
+    shift
+    cmd_agents "$@"
+    ;;
+  outputs)
+    shift
+    cmd_outputs "$@"
+    ;;
+  log)
+    shift
+    cmd_log "$@"
+    ;;
+  pivot)
+    shift
+    echo -e "${YELLOW}Pivot support coming in v0.2. For now, edit STARTUP.md manually.${NC}"
+    ;;
+  -v|--version)
+    echo "sf v${VERSION}"
+    ;;
+  -h|--help|help)
+    usage
+    ;;
+  *)
+    echo -e "${RED}Unknown command: $1${NC}"
+    echo ""
+    usage
+    exit 1
+    ;;
+esac
