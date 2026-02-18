@@ -1,0 +1,30 @@
+{
+  "projectName": "sf-demo",
+  "idea": "AI-powered code review for solo developers",
+  "startDate": "2026-02-18",
+  "currentPhase": 1,
+  "phases": {
+    "1": {"status": "in-progress", "started": "2026-02-18"},
+    "2": {"status": "waiting"},
+    "3": {"status": "waiting"},
+    "4": {"status": "waiting"},
+    "5": {"status": "waiting"},
+    "6": {"status": "waiting"},
+    "7": {"status": "waiting"}
+  },
+  "artifacts": {
+    "research": 0,
+    "product": 0,
+    "design": 0,
+    "code": 0,
+    "marketing": 0,
+    "ops": 0
+  },
+  "activity": [
+    {"time": "2026-02-18 16:15", "agent": "CEO", "action": "Project initialized — AI-powered code review for solo developers", "type": "system"},
+    {"time": "2026-02-18 16:15", "agent": "CEO", "action": "Phase 1: Discovery started", "type": "phase"},
+    {"time": "2026-02-18 16:16", "agent": "Scout", "action": "Market research initiated — analyzing competitive landscape", "type": "agent"},
+    {"time": "2026-02-18 16:17", "agent": "Scout", "action": "Identified 8 direct competitors (CodeRabbit, Sourcery, Codacy, etc.)", "type": "agent"},
+    {"time": "2026-02-18 16:18", "agent": "Scout", "action": "Customer persona development in progress", "type": "agent"}
+  ]
+}
