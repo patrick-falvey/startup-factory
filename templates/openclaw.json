@@ -3,7 +3,8 @@
   "agents": {
     "defaults": {
       "model": {
-        "primary": "anthropic/claude-sonnet-4-6"
+        "primary": "blockrun/auto",
+        "fallbacks": ["blockrun/eco"]
       },
       "heartbeat": {
         "every": "0m"
@@ -13,9 +14,6 @@
       {
         "id": "ceo",
         "workspace": "{{PROJECT_DIR}}",
-        "model": {
-          "primary": "anthropic/claude-opus-4-6"
-        },
         "heartbeat": {
           "every": "1h"
         }
@@ -34,10 +32,7 @@
       },
       {
         "id": "engineer",
-        "workspace": "{{PROJECT_DIR}}/agents/engineer",
-        "model": {
-          "primary": "openai-codex/gpt-5.3-codex"
-        }
+        "workspace": "{{PROJECT_DIR}}/agents/engineer"
       },
       {
         "id": "marketing",

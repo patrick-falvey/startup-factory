@@ -95,9 +95,20 @@ All agents shift to cron-driven operations — competitive monitoring, content c
 ## Requirements
 
 - [OpenClaw](https://openclaw.ai) installed and configured
-- An Anthropic API key (Claude Sonnet 4.6 for most agents, Opus 4.6 for CEO)
+- [ClawRouter](https://github.com/BlockRunAI/ClawRouter) installed (`blockrun/auto` is the default model)
 - Node.js 22+ (for engineering agent)
 - Git
+
+### Why ClawRouter?
+
+Instead of hardcoding models per agent (Opus for CEO, Codex for Engineer, etc.), Startup Factory uses ClawRouter's smart routing. It automatically picks the right model for each task:
+
+- Simple tasks (checklists, templates) → cheap models (~$0.001/M)
+- Medium tasks (copy, research synthesis) → mid-tier models (~$1.50/M)  
+- Complex tasks (architecture, PRD, code) → premium models (~$10/M)
+- Reasoning tasks (validation, scoring) → reasoning models (~$0.50/M)
+
+**Result:** ~92% cost savings vs hardcoding Opus, with no quality loss where it matters. One wallet, 30+ models, zero API key management.
 
 ## How It's Different
 

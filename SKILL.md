@@ -59,11 +59,12 @@ When you run `sf init`, Startup Factory creates a complete multi-agent OpenClaw 
 ## Configuration
 
 The generated `openclaw.json` configures multi-agent routing automatically. Customize:
-- **Models**: CEO uses Opus (complex orchestration), others use Sonnet (cost-effective)
-- **Engineer model**: Defaults to Codex for coding tasks
+- **Model routing**: Defaults to `blockrun/auto` via [ClawRouter](https://github.com/BlockRunAI/ClawRouter) — smart routing picks the right model per task
+- **Routing profiles**: `blockrun/auto` (balanced), `blockrun/eco` (max savings), `blockrun/premium` (best quality)
 - **Heartbeat**: CEO checks in hourly; specialist agents activated on-demand
+- **Per-agent override**: Add `model: { primary: "provider/model" }` to any agent if needed
 
 ## Requirements
 - OpenClaw installed and configured
-- Anthropic API key (or OpenAI for Engineer agent)
+- [ClawRouter](https://github.com/BlockRunAI/ClawRouter) plugin installed (default model router)
 - Node.js 22+ and git

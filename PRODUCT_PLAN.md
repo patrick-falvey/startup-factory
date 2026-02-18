@@ -411,7 +411,7 @@ openclaw startup-factory init --brief startup-brief.md
 | Over-engineering agents | Complexity, fragility | Start with 3 agents (Scout, Engineer, Marketing), add incrementally |
 | Market timing (crowded space) | Lost differentiation | Move fast, lean into self-hosted + full lifecycle angle |
 | OpenClaw platform changes | Breaking changes | Pin versions, contribute upstream, stay close to community |
-| Cost of running 7 agents | Expensive for users | Efficient model routing (Haiku for simple tasks, Opus for complex) |
+| Cost of running 7 agents | Expensive for users | ClawRouter smart routing (`blockrun/auto`) — ~92% savings, auto-routes by task complexity |
 
 ---
 
