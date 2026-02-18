@@ -30,6 +30,7 @@ usage() {
   echo -e "${BOLD}COMMANDS${NC}"
   echo "  init <idea>         Initialize a new startup project"
   echo "  run [dir]           Start/resume the agent pipeline"
+  echo "  dashboard [dir]     Open the visual management dashboard"
   echo "  status [dir]        Show project status and phase progress"
   echo "  approve [dir]       Approve current phase gate and advance"
   echo "  pivot [dir]         Mark current phase for pivot/redo"
@@ -268,6 +269,103 @@ cmd_outputs() {
   done
 }
 
+cmd_dashboard() {
+  local project_dir
+  project_dir=$(resolve_project "${1:-}") || {
+    echo -e "${RED}Error: Not in a startup factory project.${NC}"
+    exit 1
+  }
+  
+  local dashboard_file="$project_dir/dashboard/index.html"
+  if [[ ! -f "$dashboard_file" ]]; then
+    echo -e "${RED}Error: Dashboard not found at $dashboard_file${NC}"
+    exit 1
+  fi
+  
+  # Generate state.json for the dashboard to consume
+  _generate_dashboard_state "$project_dir"
+  
+  echo -e "${CYAN}${BOLD}🏭 Opening Dashboard${NC}"
+  echo ""
+  
+  # Try to serve via a simple HTTP server for proper fetch() support
+  local port=3456
+  if command -v python3 >/dev/null 2>&1; then
+    echo -e "  Serving dashboard at ${BOLD}http://localhost:${port}${NC}"
+    echo -e "  ${DIM}Press Ctrl+C to stop${NC}"
+    echo ""
+    (cd "$project_dir/dashboard" && python3 -m http.server $port) &
+    local server_pid=$!
+    sleep 0.5
+    open "http://localhost:${port}" 2>/dev/null || echo "  Open http://localhost:${port} in your browser"
+    wait $server_pid 2>/dev/null
+  else
+    # Fallback: just open the file directly
+    open "$dashboard_file" 2>/dev/null || xdg-open "$dashboard_file" 2>/dev/null || {
+      echo -e "  Open this file in your browser:"
+      echo "  file://$dashboard_file"
+    }
+  fi
+}
+
+_generate_dashboard_state() {
+  local project_dir="$1"
+  
+  # Count artifacts per category
+  local r p d c m o
+  r=$(find "$project_dir/outputs/research" -type f 2>/dev/null | wc -l | tr -d ' ')
+  p=$(find "$project_dir/outputs/product" -type f 2>/dev/null | wc -l | tr -d ' ')
+  d=$(find "$project_dir/outputs/design" -type f 2>/dev/null | wc -l | tr -d ' ')
+  c=$(find "$project_dir/outputs/code" -type f 2>/dev/null | wc -l | tr -d ' ')
+  m=$(find "$project_dir/outputs/marketing" -type f 2>/dev/null | wc -l | tr -d ' ')
+  o=$(find "$project_dir/outputs/ops" -type f 2>/dev/null | wc -l | tr -d ' ')
+  
+  # Determine current phase from STARTUP.md
+  local current_phase=1
+  local phase_num=0
+  while IFS= read -r line; do
+    if [[ "$line" == *"🔄 In Progress"* ]]; then
+      phase_num=$(echo "$line" | grep -o '[0-9]\.' | head -1 | tr -d '.')
+      [[ -n "$phase_num" ]] && current_phase=$phase_num
+    fi
+  done < "$project_dir/STARTUP.md"
+  
+  # Build phase status map
+  local phase_json="{"
+  for i in 1 2 3 4 5 6 7; do
+    local status="waiting"
+    grep -q "$i\..*🔄 In Progress" "$project_dir/STARTUP.md" 2>/dev/null && status="in-progress"
+    grep -q "$i\..*✅ Complete" "$project_dir/STARTUP.md" 2>/dev/null && status="complete"
+    [[ $i -gt 1 ]] && phase_json+=","
+    phase_json+="\"$i\":{\"status\":\"$status\"}"
+  done
+  phase_json+="}"
+  
+  # Get project info
+  local idea name start_date
+  idea=$(grep "^## Idea" "$project_dir/STARTUP.md" -A1 2>/dev/null | tail -1)
+  name=$(basename "$project_dir")
+  start_date=$(grep "^\- \*\*Started:\*\*" "$project_dir/STARTUP.md" 2>/dev/null | sed 's/.*\*\*Started:\*\* //' || date +%Y-%m-%d)
+  
+  cat > "$project_dir/dashboard/state.json" <<ENDJSON
+{
+  "projectName": "$name",
+  "idea": "$idea",
+  "startDate": "$start_date",
+  "currentPhase": $current_phase,
+  "phases": $phase_json,
+  "artifacts": {
+    "research": $r,
+    "product": $p,
+    "design": $d,
+    "code": $c,
+    "marketing": $m,
+    "ops": $o
+  }
+}
+ENDJSON
+}
+
 cmd_run() {
   local project_dir
   project_dir=$(resolve_project "${1:-}") || {
@@ -371,6 +469,10 @@ case "${1:-help}" in
   run)
     shift
     cmd_run "$@"
+    ;;
+  dashboard)
+    shift
+    cmd_dashboard "$@"
     ;;
   pivot)
     shift

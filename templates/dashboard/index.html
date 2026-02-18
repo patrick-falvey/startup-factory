@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🏭 Startup Factory — Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            sf: {
+              bg: '#0a0a0f',
+              surface: '#12121a',
+              card: '#1a1a2e',
+              border: '#2a2a3e',
+              accent: '#6366f1',
+              accentLight: '#818cf8',
+              success: '#22c55e',
+              warning: '#f59e0b',
+              danger: '#ef4444',
+              muted: '#64748b',
+              text: '#e2e8f0',
+              textDim: '#94a3b8',
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    body { background: #0a0a0f; }
+    .glow { box-shadow: 0 0 20px rgba(99, 102, 241, 0.15); }
+    .glow-success { box-shadow: 0 0 20px rgba(34, 197, 94, 0.15); }
+    .glow-warning { box-shadow: 0 0 20px rgba(245, 158, 11, 0.15); }
+    .pipeline-line { background: linear-gradient(90deg, #6366f1 var(--progress), #2a2a3e var(--progress)); }
+    .phase-dot { transition: all 0.3s ease; }
+    .phase-dot:hover { transform: scale(1.15); }
+    .card-hover { transition: all 0.2s ease; }
+    .card-hover:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.3); }
+    .pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    .fade-in { animation: fadeIn 0.5s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #12121a; }
+    ::-webkit-scrollbar-thumb { background: #2a2a3e; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #3a3a4e; }
+  </style>
+</head>
+<body class="text-sf-text font-sans min-h-screen">
+
+  <!-- Top Bar -->
+  <header class="sticky top-0 z-50 bg-sf-bg/80 backdrop-blur-xl border-b border-sf-border">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <span class="text-2xl">🏭</span>
+        <div>
+          <h1 class="text-lg font-bold" id="project-name">Startup Factory</h1>
+          <p class="text-xs text-sf-textDim font-mono" id="project-idea">Loading...</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-4">
+        <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-sf-card border border-sf-border">
+          <div class="w-2 h-2 rounded-full bg-sf-success pulse" id="status-dot"></div>
+          <span class="text-sm text-sf-textDim" id="status-text">Running</span>
+        </div>
+        <button onclick="refreshDashboard()" class="p-2 rounded-lg bg-sf-card border border-sf-border hover:border-sf-accent transition-colors" title="Refresh">
+          <svg class="w-4 h-4 text-sf-textDim" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-6 py-8 space-y-8">
+
+    <!-- Pipeline Visualization -->
+    <section class="fade-in">
+      <div class="bg-sf-surface rounded-2xl border border-sf-border p-8 glow">
+        <div class="flex items-center justify-between mb-6">
+          <h2 class="text-sm font-semibold uppercase tracking-wider text-sf-textDim">Pipeline Progress</h2>
+          <span class="text-sm font-mono text-sf-accent" id="phase-label">Phase 1 of 7</span>
+        </div>
+        
+        <!-- Pipeline Track -->
+        <div class="relative">
+          <div class="pipeline-line h-1 rounded-full mb-8" style="--progress: 0%;" id="pipeline-bar"></div>
+          <div class="flex justify-between -mt-6" id="pipeline-dots">
+            <!-- Dots injected by JS -->
+          </div>
+        </div>
+        
+        <!-- Phase Labels -->
+        <div class="flex justify-between mt-4" id="pipeline-labels">
+          <!-- Labels injected by JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- Stats Row -->
+    <section class="grid grid-cols-2 md:grid-cols-4 gap-4 fade-in" style="animation-delay: 0.1s;">
+      <div class="bg-sf-surface rounded-xl border border-sf-border p-5 card-hover">
+        <p class="text-xs text-sf-textDim uppercase tracking-wider mb-1">Current Phase</p>
+        <p class="text-2xl font-bold text-sf-accent" id="stat-phase">Discovery</p>
+      </div>
+      <div class="bg-sf-surface rounded-xl border border-sf-border p-5 card-hover">
+        <p class="text-xs text-sf-textDim uppercase tracking-wider mb-1">Artifacts</p>
+        <p class="text-2xl font-bold" id="stat-artifacts">0</p>
+      </div>
+      <div class="bg-sf-surface rounded-xl border border-sf-border p-5 card-hover">
+        <p class="text-xs text-sf-textDim uppercase tracking-wider mb-1">Days Active</p>
+        <p class="text-2xl font-bold" id="stat-days">0</p>
+      </div>
+      <div class="bg-sf-surface rounded-xl border border-sf-border p-5 card-hover">
+        <p class="text-xs text-sf-textDim uppercase tracking-wider mb-1">Agents Active</p>
+        <p class="text-2xl font-bold" id="stat-agents">0 / 7</p>
+      </div>
+    </section>
+
+    <!-- Two Column: Agents + Activity -->
+    <section class="grid md:grid-cols-3 gap-6 fade-in" style="animation-delay: 0.2s;">
+      
+      <!-- Agent Roster -->
+      <div class="md:col-span-1 bg-sf-surface rounded-2xl border border-sf-border p-6">
+        <h2 class="text-sm font-semibold uppercase tracking-wider text-sf-textDim mb-4">Agent Roster</h2>
+        <div class="space-y-3" id="agent-roster">
+          <!-- Agents injected by JS -->
+        </div>
+      </div>
+
+      <!-- Phase Details + Approval -->
+      <div class="md:col-span-2 space-y-6">
+        
+        <!-- Current Phase Card -->
+        <div class="bg-sf-surface rounded-2xl border border-sf-border p-6" id="phase-detail-card">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-sm font-semibold uppercase tracking-wider text-sf-textDim">Current Phase</h2>
+            <span class="px-3 py-1 rounded-full text-xs font-medium bg-sf-accent/20 text-sf-accentLight" id="phase-status-badge">In Progress</span>
+          </div>
+          <h3 class="text-xl font-bold mb-2" id="phase-title">Phase 1: Discovery</h3>
+          <p class="text-sf-textDim text-sm mb-4" id="phase-description">Scout is researching the market, analyzing competitors, and validating the idea.</p>
+          
+          <!-- Phase Deliverables -->
+          <div class="space-y-2 mb-6" id="phase-deliverables">
+            <!-- Deliverables injected by JS -->
+          </div>
+
+          <!-- Approval Button -->
+          <div class="flex gap-3" id="approval-actions" style="display: none;">
+            <button onclick="approvePhase()" class="px-6 py-2.5 rounded-xl bg-sf-success text-white font-semibold text-sm hover:bg-sf-success/90 transition-colors">
+              ✅ Approve & Advance
+            </button>
+            <button onclick="requestRevision()" class="px-6 py-2.5 rounded-xl bg-sf-card border border-sf-border text-sf-textDim font-semibold text-sm hover:border-sf-warning transition-colors">
+              ✏️ Request Revision
+            </button>
+          </div>
+        </div>
+
+        <!-- Artifacts Grid -->
+        <div class="bg-sf-surface rounded-2xl border border-sf-border p-6">
+          <h2 class="text-sm font-semibold uppercase tracking-wider text-sf-textDim mb-4">Generated Artifacts</h2>
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-3" id="artifacts-grid">
+            <!-- Artifacts injected by JS -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Activity Timeline -->
+    <section class="fade-in" style="animation-delay: 0.3s;">
+      <div class="bg-sf-surface rounded-2xl border border-sf-border p-6">
+        <h2 class="text-sm font-semibold uppercase tracking-wider text-sf-textDim mb-4">Activity Timeline</h2>
+        <div class="space-y-4" id="activity-timeline">
+          <!-- Timeline injected by JS -->
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="border-t border-sf-border mt-12 py-6">
+    <div class="max-w-7xl mx-auto px-6 flex items-center justify-between text-xs text-sf-muted">
+      <span>🏭 Startup Factory v0.1.0 — Built on <a href="https://openclaw.ai" class="text-sf-accent hover:underline">OpenClaw</a></span>
+      <span>Model routing by <a href="https://github.com/BlockRunAI/ClawRouter" class="text-sf-accent hover:underline">ClawRouter</a></span>
+    </div>
+  </footer>
+
+  <script>
+    // ============================================================
+    // Startup Factory Dashboard — State & Rendering
+    // ============================================================
+
+    const PHASES = [
+      { id: 1, name: 'Discovery',  emoji: '🔬', agent: 'Scout',     color: 'indigo' },
+      { id: 2, name: 'Definition', emoji: '📋', agent: 'PM',        color: 'violet' },
+      { id: 3, name: 'Design',     emoji: '🎨', agent: 'Design',    color: 'pink' },
+      { id: 4, name: 'Build',      emoji: '👨‍💻', agent: 'Engineer',  color: 'cyan' },
+      { id: 5, name: 'Pre-Launch', emoji: '📣', agent: 'Mktg+Ops',  color: 'amber' },
+      { id: 6, name: 'Launch',     emoji: '🚀', agent: 'All',       color: 'green' },
+      { id: 7, name: 'Operate',    emoji: '💰', agent: 'All',       color: 'emerald' },
+    ];
+
+    const AGENTS = [
+      { id: 'ceo',       name: 'CEO',       emoji: '🧠', role: 'Orchestrator',     status: 'active' },
+      { id: 'scout',     name: 'Scout',     emoji: '🔬', role: 'Market Research',   status: 'idle' },
+      { id: 'pm',        name: 'PM',        emoji: '📋', role: 'Product Manager',   status: 'idle' },
+      { id: 'design',    name: 'Design',    emoji: '🎨', role: 'UI/UX Designer',    status: 'idle' },
+      { id: 'engineer',  name: 'Engineer',  emoji: '👨‍💻', role: 'Full-Stack Dev',    status: 'idle' },
+      { id: 'marketing', name: 'Marketing', emoji: '📣', role: 'Growth Lead',       status: 'idle' },
+      { id: 'ops',       name: 'Ops',       emoji: '💰', role: 'Finance & Support', status: 'idle' },
+    ];
+
+    const PHASE_DELIVERABLES = {
+      1: ['Market Research Brief', 'Competitive Matrix', 'Customer Personas', 'Validation Scorecard'],
+      2: ['PRD', 'User Stories', 'Information Architecture', 'Sprint Plan', 'MVP Scope'],
+      3: ['Design System', 'Tailwind Config', 'Wireframes', 'Landing Page', 'Brand Assets'],
+      4: ['Architecture Doc', 'Application Code', 'Tests', 'CI/CD Pipeline', 'Deployed MVP'],
+      5: ['GTM Strategy', 'Landing Page Copy', 'Email Sequences', 'Legal Docs', 'Financial Model'],
+      6: ['Product Hunt Listing', 'Social Posts', 'Launch Checklist', 'Analytics Setup'],
+      7: ['Competitive Pulse', 'Content Calendar', 'Support Playbook', 'KPI Dashboard'],
+    };
+
+    // ---- State (loaded from project or defaults) ----
+    let state = {
+      projectName: '{{PROJECT_NAME}}',
+      idea: '{{IDEA}}',
+      startDate: '{{DATE}}',
+      currentPhase: 1,
+      phases: {
+        1: { status: 'in-progress', started: '{{DATE}}', completed: null, approved: false },
+        2: { status: 'waiting', started: null, completed: null, approved: false },
+        3: { status: 'waiting', started: null, completed: null, approved: false },
+        4: { status: 'waiting', started: null, completed: null, approved: false },
+        5: { status: 'waiting', started: null, completed: null, approved: false },
+        6: { status: 'waiting', started: null, completed: null, approved: false },
+        7: { status: 'waiting', started: null, completed: null, approved: false },
+      },
+      artifacts: {
+        research: 0, product: 0, design: 0, code: 0, marketing: 0, ops: 0
+      },
+      activity: [
+        { time: '{{DATE}} 00:00', agent: 'CEO', action: 'Project initialized', type: 'system' },
+        { time: '{{DATE}} 00:01', agent: 'CEO', action: 'Phase 1: Discovery started', type: 'phase' },
+      ]
+    };
+
+    // ---- Render Functions ----
+
+    function renderPipeline() {
+      const progress = ((state.currentPhase - 1) / (PHASES.length - 1)) * 100;
+      document.getElementById('pipeline-bar').style.setProperty('--progress', progress + '%');
+      document.getElementById('phase-label').textContent = `Phase ${state.currentPhase} of ${PHASES.length}`;
+
+      const dotsContainer = document.getElementById('pipeline-dots');
+      const labelsContainer = document.getElementById('pipeline-labels');
+      dotsContainer.innerHTML = '';
+      labelsContainer.innerHTML = '';
+
+      PHASES.forEach(phase => {
+        const phaseState = state.phases[phase.id];
+        let dotClass, dotInner;
+
+        if (phaseState.status === 'complete') {
+          dotClass = 'bg-sf-success';
+          dotInner = '<svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>';
+        } else if (phaseState.status === 'in-progress') {
+          dotClass = 'bg-sf-accent ring-4 ring-sf-accent/30';
+          dotInner = '<span class="w-2 h-2 rounded-full bg-white pulse"></span>';
+        } else {
+          dotClass = 'bg-sf-border';
+          dotInner = '';
+        }
+
+        dotsContainer.innerHTML += `
+          <div class="phase-dot w-8 h-8 rounded-full ${dotClass} flex items-center justify-center cursor-pointer relative z-10" 
+               onclick="showPhaseDetail(${phase.id})" title="Phase ${phase.id}: ${phase.name}">
+            ${dotInner}
+          </div>`;
+
+        const labelActive = phase.id === state.currentPhase ? 'text-sf-text font-semibold' : 'text-sf-muted';
+        labelsContainer.innerHTML += `
+          <div class="text-center" style="width: ${100/PHASES.length}%">
+            <span class="text-xs ${labelActive}">${phase.emoji} ${phase.name}</span>
+          </div>`;
+      });
+    }
+
+    function renderAgents() {
+      const container = document.getElementById('agent-roster');
+      container.innerHTML = '';
+
+      AGENTS.forEach(agent => {
+        let statusColor, statusText;
+        const isActivePhaseAgent = isAgentActiveInPhase(agent.id, state.currentPhase);
+
+        if (agent.id === 'ceo') {
+          statusColor = 'bg-sf-success'; statusText = 'Active';
+        } else if (isActivePhaseAgent && state.phases[state.currentPhase].status === 'in-progress') {
+          statusColor = 'bg-sf-accent'; statusText = 'Working';
+        } else {
+          statusColor = 'bg-sf-muted/50'; statusText = 'Idle';
+        }
+
+        container.innerHTML += `
+          <div class="flex items-center gap-3 p-3 rounded-xl bg-sf-card/50 border border-sf-border/50 card-hover">
+            <span class="text-lg">${agent.emoji}</span>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-semibold truncate">${agent.name}</p>
+              <p class="text-xs text-sf-textDim truncate">${agent.role}</p>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <div class="w-1.5 h-1.5 rounded-full ${statusColor}"></div>
+              <span class="text-xs text-sf-muted">${statusText}</span>
+            </div>
+          </div>`;
+      });
+    }
+
+    function isAgentActiveInPhase(agentId, phase) {
+      const phaseAgents = {
+        1: ['scout'], 2: ['pm'], 3: ['design'], 4: ['engineer'],
+        5: ['marketing', 'ops'], 6: ['scout','pm','design','engineer','marketing','ops'],
+        7: ['scout','pm','design','engineer','marketing','ops'],
+      };
+      return (phaseAgents[phase] || []).includes(agentId);
+    }
+
+    function renderPhaseDetail(phaseId) {
+      const phase = PHASES[phaseId - 1];
+      const phaseState = state.phases[phaseId];
+      const deliverables = PHASE_DELIVERABLES[phaseId] || [];
+
+      document.getElementById('phase-title').textContent = `Phase ${phase.id}: ${phase.name}`;
+      
+      const descriptions = {
+        1: 'Scout is researching the market, analyzing competitors, and validating the idea.',
+        2: 'PM is creating the PRD, user stories, and sprint plan from research findings.',
+        3: 'Design is building the visual identity, wireframes, and landing page.',
+        4: 'Engineer is building the MVP — architecture, code, tests, and deployment.',
+        5: 'Marketing and Ops are working in parallel on launch materials and business infrastructure.',
+        6: 'Coordinated launch across Product Hunt, social media, email, and PR.',
+        7: 'Ongoing operations — competitive monitoring, content, support, and analytics.',
+      };
+      document.getElementById('phase-description').textContent = descriptions[phaseId] || '';
+
+      // Status badge
+      const badge = document.getElementById('phase-status-badge');
+      if (phaseState.status === 'complete') {
+        badge.textContent = '✅ Complete';
+        badge.className = 'px-3 py-1 rounded-full text-xs font-medium bg-sf-success/20 text-sf-success';
+      } else if (phaseState.status === 'in-progress') {
+        badge.textContent = '🔄 In Progress';
+        badge.className = 'px-3 py-1 rounded-full text-xs font-medium bg-sf-accent/20 text-sf-accentLight';
+      } else if (phaseState.status === 'review') {
+        badge.textContent = '👁️ Awaiting Review';
+        badge.className = 'px-3 py-1 rounded-full text-xs font-medium bg-sf-warning/20 text-sf-warning';
+      } else {
+        badge.textContent = '⏸️ Waiting';
+        badge.className = 'px-3 py-1 rounded-full text-xs font-medium bg-sf-muted/20 text-sf-muted';
+      }
+
+      // Deliverables
+      const container = document.getElementById('phase-deliverables');
+      container.innerHTML = deliverables.map((d, i) => {
+        const done = phaseState.status === 'complete';
+        const icon = done ? '✅' : (phaseState.status === 'in-progress' ? '⏳' : '⬜');
+        return `<div class="flex items-center gap-2 text-sm ${done ? 'text-sf-text' : 'text-sf-textDim'}">
+          <span>${icon}</span><span>${d}</span>
+        </div>`;
+      }).join('');
+
+      // Approval actions
+      const actions = document.getElementById('approval-actions');
+      actions.style.display = phaseState.status === 'review' ? 'flex' : 'none';
+    }
+
+    function renderArtifacts() {
+      const container = document.getElementById('artifacts-grid');
+      const categories = [
+        { key: 'research',  emoji: '🔬', label: 'Research' },
+        { key: 'product',   emoji: '📋', label: 'Product' },
+        { key: 'design',    emoji: '🎨', label: 'Design' },
+        { key: 'code',      emoji: '💻', label: 'Code' },
+        { key: 'marketing', emoji: '📣', label: 'Marketing' },
+        { key: 'ops',       emoji: '💰', label: 'Ops' },
+      ];
+
+      container.innerHTML = categories.map(cat => {
+        const count = state.artifacts[cat.key] || 0;
+        const active = count > 0;
+        return `
+          <div class="p-4 rounded-xl ${active ? 'bg-sf-card border-sf-accent/30' : 'bg-sf-card/30 border-sf-border/30'} border text-center card-hover cursor-pointer"
+               onclick="showArtifactDetail('${cat.key}')">
+            <span class="text-2xl">${cat.emoji}</span>
+            <p class="text-xs text-sf-textDim mt-1">${cat.label}</p>
+            <p class="text-lg font-bold ${active ? 'text-sf-accent' : 'text-sf-muted'}">${count}</p>
+          </div>`;
+      }).join('');
+
+      // Total artifacts stat
+      const total = Object.values(state.artifacts).reduce((a, b) => a + b, 0);
+      document.getElementById('stat-artifacts').textContent = total;
+    }
+
+    function renderTimeline() {
+      const container = document.getElementById('activity-timeline');
+      const recent = state.activity.slice(-10).reverse();
+
+      if (recent.length === 0) {
+        container.innerHTML = '<p class="text-sm text-sf-muted">No activity yet.</p>';
+        return;
+      }
+
+      container.innerHTML = recent.map(entry => {
+        const typeColors = {
+          system: 'border-sf-muted',
+          phase: 'border-sf-accent',
+          agent: 'border-sf-success',
+          approval: 'border-sf-warning',
+          error: 'border-sf-danger',
+        };
+        const borderColor = typeColors[entry.type] || 'border-sf-muted';
+
+        return `
+          <div class="flex gap-4 items-start">
+            <div class="w-px h-full ${borderColor} border-l-2 ml-2 flex-shrink-0"></div>
+            <div class="pb-4">
+              <p class="text-xs text-sf-muted font-mono">${entry.time}</p>
+              <p class="text-sm">
+                <span class="font-semibold text-sf-accentLight">${entry.agent}</span>
+                <span class="text-sf-textDim ml-1">${entry.action}</span>
+              </p>
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    function renderStats() {
+      const phaseName = PHASES[state.currentPhase - 1]?.name || 'Unknown';
+      document.getElementById('stat-phase').textContent = phaseName;
+      
+      const start = new Date(state.startDate);
+      const now = new Date();
+      const days = Math.max(1, Math.ceil((now - start) / (1000 * 60 * 60 * 24)));
+      document.getElementById('stat-days').textContent = days;
+
+      let activeCount = 1; // CEO always active
+      AGENTS.forEach(a => {
+        if (a.id !== 'ceo' && isAgentActiveInPhase(a.id, state.currentPhase) && 
+            state.phases[state.currentPhase].status === 'in-progress') {
+          activeCount++;
+        }
+      });
+      document.getElementById('stat-agents').textContent = `${activeCount} / 7`;
+    }
+
+    function renderAll() {
+      document.getElementById('project-name').textContent = state.projectName || 'Startup Factory';
+      document.getElementById('project-idea').textContent = state.idea || '';
+      renderPipeline();
+      renderAgents();
+      renderPhaseDetail(state.currentPhase);
+      renderArtifacts();
+      renderTimeline();
+      renderStats();
+    }
+
+    // ---- Actions ----
+
+    function showPhaseDetail(phaseId) {
+      renderPhaseDetail(phaseId);
+    }
+
+    function showArtifactDetail(category) {
+      // Future: open artifact viewer
+      console.log('Show artifacts for:', category);
+    }
+
+    function approvePhase() {
+      const current = state.currentPhase;
+      state.phases[current].status = 'complete';
+      state.phases[current].completed = new Date().toISOString().split('T')[0];
+      state.phases[current].approved = true;
+      
+      if (current < 7) {
+        state.currentPhase = current + 1;
+        state.phases[current + 1].status = 'in-progress';
+        state.phases[current + 1].started = new Date().toISOString().split('T')[0];
+      }
+
+      state.activity.push({
+        time: new Date().toLocaleString(),
+        agent: 'Founder',
+        action: `Approved Phase ${current}: ${PHASES[current-1].name}`,
+        type: 'approval'
+      });
+
+      renderAll();
+    }
+
+    function requestRevision() {
+      const message = prompt('What should be revised?');
+      if (message) {
+        state.activity.push({
+          time: new Date().toLocaleString(),
+          agent: 'Founder',
+          action: `Requested revision: "${message}"`,
+          type: 'approval'
+        });
+        renderAll();
+      }
+    }
+
+    function refreshDashboard() {
+      // In production: fetch state from OpenClaw API or read STARTUP.md
+      renderAll();
+    }
+
+    // ---- Load State from Project (if available) ----
+    
+    async function loadProjectState() {
+      // Try to load state from a local JSON file (generated by sf status --json)
+      try {
+        const resp = await fetch('./state.json');
+        if (resp.ok) {
+          const data = await resp.json();
+          Object.assign(state, data);
+        }
+      } catch (e) {
+        // Use defaults — template variables will be replaced by sf-init
+      }
+      renderAll();
+    }
+
+    // Init
+    loadProjectState();
+  </script>
+
+</body>
+</html>

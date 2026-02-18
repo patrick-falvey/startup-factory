@@ -291,6 +291,24 @@ cat > "$PROJECT_DIR/HEARTBEAT.md" <<'EOF'
 EOF
 
 # ============================================================
+# Install dashboard
+# ============================================================
+echo -e "${BLUE}Installing dashboard...${NC}"
+
+mkdir -p "$PROJECT_DIR/dashboard"
+if [[ -d "$TEMPLATE_DIR/dashboard" ]]; then
+  for file in "$TEMPLATE_DIR/dashboard/"*; do
+    filename=$(basename "$file")
+    sed \
+      -e "s|{{PROJECT_NAME}}|$PROJECT_NAME|g" \
+      -e "s|{{PROJECT_DIR}}|$PROJECT_DIR|g" \
+      -e "s|{{IDEA}}|$IDEA|g" \
+      -e "s|{{DATE}}|$DATE|g" \
+      "$file" > "$PROJECT_DIR/dashboard/$filename"
+  done
+fi
+
+# ============================================================
 # Copy skills into project
 # ============================================================
 echo -e "${BLUE}Installing skills...${NC}"
