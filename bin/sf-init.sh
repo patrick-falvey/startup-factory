@@ -308,6 +308,64 @@ if [[ -d "$TEMPLATE_DIR/dashboard" ]]; then
   done
 fi
 
+# Generate initial state.json for dashboard
+cat > "$PROJECT_DIR/dashboard/state.json" <<ENDJSON
+{
+  "projectName": "$PROJECT_NAME",
+  "idea": "$IDEA",
+  "startDate": "$DATE",
+  "currentPhase": 1,
+  "phases": {
+    "1": {"status": "in-progress", "started": "$DATE"},
+    "2": {"status": "waiting"},
+    "3": {"status": "waiting"},
+    "4": {"status": "waiting"},
+    "5": {"status": "waiting"},
+    "6": {"status": "waiting"},
+    "7": {"status": "waiting"}
+  },
+  "artifacts": {
+    "research": 0, "product": 0, "design": 0,
+    "code": 0, "marketing": 0, "ops": 0
+  },
+  "activity": [
+    {"time": "$DATE $(date +%H:%M)", "agent": "CEO", "action": "Project initialized — $IDEA", "type": "system"},
+    {"time": "$DATE $(date +%H:%M)", "agent": "CEO", "action": "Phase 1: Discovery started", "type": "phase"}
+  ]
+}
+ENDJSON
+
+# Generate initial state.json for dashboard
+cat > "$PROJECT_DIR/dashboard/state.json" <<ENDJSON
+{
+  "projectName": "$PROJECT_NAME",
+  "idea": "$IDEA",
+  "startDate": "$DATE",
+  "currentPhase": 1,
+  "phases": {
+    "1": {"status": "in-progress", "started": "$DATE"},
+    "2": {"status": "waiting"},
+    "3": {"status": "waiting"},
+    "4": {"status": "waiting"},
+    "5": {"status": "waiting"},
+    "6": {"status": "waiting"},
+    "7": {"status": "waiting"}
+  },
+  "artifacts": {
+    "research": 0,
+    "product": 0,
+    "design": 0,
+    "code": 0,
+    "marketing": 0,
+    "ops": 0
+  },
+  "activity": [
+    {"time": "$DATE $(date +%H:%M)", "agent": "CEO", "action": "Project initialized — $IDEA", "type": "system"},
+    {"time": "$DATE $(date +%H:%M)", "agent": "CEO", "action": "Phase 1: Discovery started", "type": "phase"}
+  ]
+}
+ENDJSON
+
 # ============================================================
 # Copy skills into project
 # ============================================================
@@ -381,16 +439,16 @@ echo -e "  ${BOLD}Agents:${NC}   7 (CEO, Scout, PM, Design, Engineer, Marketing,
 echo ""
 echo -e "${YELLOW}Next steps:${NC}"
 echo ""
-echo "  1. Review the agent configs:"
-echo "     cat $PROJECT_DIR/AGENTS.md"
+echo "  1. Open the dashboard:"
+echo "     $SCRIPT_DIR/sf dashboard $PROJECT_DIR"
 echo ""
-echo "  2. Start the factory (via OpenClaw):"
+echo "  2. Start the factory:"
+echo "     $SCRIPT_DIR/sf run $PROJECT_DIR"
+echo ""
+echo "  3. Or start manually via OpenClaw:"
 echo "     openclaw agent --workspace $PROJECT_DIR \\"
 echo "       --message \"Begin Phase 1: Discovery. The startup idea is: $IDEA\""
 echo ""
-echo "  3. Or send via your preferred channel:"
-echo "     Message your OpenClaw bot: \"@ceo Begin Phase 1 for $PROJECT_NAME\""
-echo ""
 echo -e "${CYAN}The CEO agent will orchestrate all 7 agents through the full${NC}"
-echo -e "${CYAN}startup pipeline. Sit back and approve phase gates as they come.${NC}"
+echo -e "${CYAN}startup pipeline. Track progress in the dashboard.${NC}"
 echo ""

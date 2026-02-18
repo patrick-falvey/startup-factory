@@ -1,6 +1,6 @@
 {
   "projectName": "sf-demo",
-  "idea": "AI-powered code review for solo developers",
+  "idea": "AI-powered pet nutrition advisor",
   "startDate": "2026-02-18",
   "currentPhase": 1,
   "phases": {
@@ -21,10 +21,7 @@
     "ops": 0
   },
   "activity": [
-    {"time": "2026-02-18 16:15", "agent": "CEO", "action": "Project initialized — AI-powered code review for solo developers", "type": "system"},
-    {"time": "2026-02-18 16:15", "agent": "CEO", "action": "Phase 1: Discovery started", "type": "phase"},
-    {"time": "2026-02-18 16:16", "agent": "Scout", "action": "Market research initiated — analyzing competitive landscape", "type": "agent"},
-    {"time": "2026-02-18 16:17", "agent": "Scout", "action": "Identified 8 direct competitors (CodeRabbit, Sourcery, Codacy, etc.)", "type": "agent"},
-    {"time": "2026-02-18 16:18", "agent": "Scout", "action": "Customer persona development in progress", "type": "agent"}
+    {"time": "2026-02-18 16:23", "agent": "CEO", "action": "Project initialized — AI-powered pet nutrition advisor", "type": "system"},
+    {"time": "2026-02-18 16:23", "agent": "CEO", "action": "Phase 1: Discovery started", "type": "phase"}
   ]
 }
