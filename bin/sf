@@ -29,6 +29,7 @@ usage() {
   echo ""
   echo -e "${BOLD}COMMANDS${NC}"
   echo "  init <idea>         Initialize a new startup project"
+  echo "  run [dir]           Start/resume the agent pipeline"
   echo "  status [dir]        Show project status and phase progress"
   echo "  approve [dir]       Approve current phase gate and advance"
   echo "  pivot [dir]         Mark current phase for pivot/redo"
@@ -267,6 +268,49 @@ cmd_outputs() {
   done
 }
 
+cmd_run() {
+  local project_dir
+  project_dir=$(resolve_project "${1:-}") || {
+    echo -e "${RED}Error: Not in a startup factory project.${NC}"
+    exit 1
+  }
+  
+  local idea
+  idea=$(grep "^## Idea" "$project_dir/STARTUP.md" -A1 | tail -1)
+  local phase
+  phase=$(grep "^- \*\*Phase:\*\*" "$project_dir/STARTUP.md" | sed 's/.*\*\*Phase:\*\* //')
+  
+  echo -e "${CYAN}${BOLD}🏭 Starting Startup Factory${NC}"
+  echo ""
+  echo -e "  ${BOLD}Project:${NC} $(basename "$project_dir")"
+  echo -e "  ${BOLD}Phase:${NC}   $phase"
+  echo -e "  ${BOLD}Idea:${NC}    $idea"
+  echo ""
+  
+  # Check if ClawRouter is available
+  if curl -sf http://localhost:8402/health >/dev/null 2>&1; then
+    echo -e "  ${GREEN}✓${NC} ClawRouter running"
+  else
+    echo -e "  ${YELLOW}⚠${NC} ClawRouter not detected (will use configured model fallback)"
+  fi
+  
+  # Check if OpenClaw gateway is running
+  if openclaw status >/dev/null 2>&1; then
+    echo -e "  ${GREEN}✓${NC} OpenClaw Gateway running"
+  else
+    echo -e "  ${RED}✗${NC} OpenClaw Gateway not running — start with: openclaw gateway start"
+    exit 1
+  fi
+  
+  echo ""
+  echo -e "${BLUE}Launching CEO agent...${NC}"
+  echo ""
+  
+  # Send the kickoff message to the CEO agent
+  openclaw agent --workspace "$project_dir" \
+    --message "Begin Phase 1: Discovery. The startup idea is: $idea. Follow BOOTSTRAP.md to get started."
+}
+
 cmd_log() {
   local project_dir
   project_dir=$(resolve_project "${1:-}") || {
@@ -323,6 +367,10 @@ case "${1:-help}" in
   log)
     shift
     cmd_log "$@"
+    ;;
+  run)
+    shift
+    cmd_run "$@"
     ;;
   pivot)
     shift

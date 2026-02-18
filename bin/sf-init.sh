@@ -202,6 +202,20 @@ cp "$PROJECT_DIR/agents/ceo/AGENTS.md" "$PROJECT_DIR/AGENTS.md"
 cp "$PROJECT_DIR/agents/ceo/SOUL.md" "$PROJECT_DIR/SOUL.md"
 
 # ============================================================
+# Copy BOOTSTRAP.md and ORCHESTRATION.md
+# ============================================================
+sed \
+  -e "s|{{PROJECT_NAME}}|$PROJECT_NAME|g" \
+  -e "s|{{PROJECT_DIR}}|$PROJECT_DIR|g" \
+  -e "s|{{IDEA}}|$IDEA|g" \
+  -e "s|{{DATE}}|$DATE|g" \
+  "$TEMPLATE_DIR/BOOTSTRAP.md" > "$PROJECT_DIR/BOOTSTRAP.md"
+
+if [[ -f "$TEMPLATE_DIR/agents/ceo/ORCHESTRATION.md" ]]; then
+  cp "$TEMPLATE_DIR/agents/ceo/ORCHESTRATION.md" "$PROJECT_DIR/ORCHESTRATION.md"
+fi
+
+# ============================================================
 # Create root MEMORY.md
 # ============================================================
 cat > "$PROJECT_DIR/MEMORY.md" <<EOF
@@ -274,6 +288,39 @@ cat > "$PROJECT_DIR/HEARTBEAT.md" <<'EOF'
 ### 5. Status Update
 - If meaningful progress since last update, send brief status to founder
 - Format: "🏭 [Phase X] — [1-line summary]. [Action needed/no action needed]."
+EOF
+
+# ============================================================
+# Copy skills into project
+# ============================================================
+echo -e "${BLUE}Installing skills...${NC}"
+
+if [[ -d "$TEMPLATE_DIR/skills" ]]; then
+  cp -r "$TEMPLATE_DIR/skills/"* "$PROJECT_DIR/skills/" 2>/dev/null || true
+fi
+
+# ============================================================
+# Create USER.md with project context
+# ============================================================
+cat > "$PROJECT_DIR/USER.md" <<EOF
+# USER.md — Startup Factory Project
+
+## Project
+- **Name:** $PROJECT_NAME
+- **Idea:** $IDEA
+- **Created:** $DATE
+
+## Agent Team
+This project is managed by 7 AI agents coordinated through OpenClaw.
+The CEO agent orchestrates the others through a phased pipeline.
+
+## Founder
+The founder interacts through their preferred OpenClaw channel.
+All phase gates require explicit founder approval before advancing.
+
+## Model Routing
+Using ClawRouter (blockrun/auto) for smart model selection.
+Each request is routed to the most cost-effective model for the task.
 EOF
 
 # ============================================================
