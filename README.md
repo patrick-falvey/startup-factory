@@ -94,8 +94,31 @@ All agents shift to cron-driven operations — competitive monitoring, content c
 │   ├── code/               # The actual application
 │   ├── marketing/          # Content, emails, social
 │   └── ops/                # Legal, financial, support
+├── dashboard/              # Visual management UI
+│   ├── index.html          # Dashboard (Tailwind, zero build step)
+│   └── state.json          # Live project state
 └── memory/                 # Agent activity logs
 ```
+
+## Dashboard
+
+Every project ships with a visual management dashboard. Launch it with:
+
+```bash
+sf dashboard              # serves on localhost + opens browser
+```
+
+**Features:**
+- 🔵 **Pipeline visualization** — 7-phase track with animated progress
+- 📊 **Stats cards** — current phase, artifacts, days active, agents
+- 🤖 **Agent roster** — real-time status (active/working/idle)
+- 📋 **Phase detail** — deliverables checklist, approval buttons
+- 📁 **Artifact grid** — per-category file counts
+- 📜 **Activity timeline** — color-coded agent actions
+
+The dashboard reads `state.json` which is auto-generated on init and refreshed by `sf dashboard`. Phase gate approvals and revisions can be triggered from the UI.
+
+**Live demo:** [patrick-falvey.github.io/startup-factory](https://patrick-falvey.github.io/startup-factory/)
 
 ## Requirements
 
