@@ -20,11 +20,13 @@ Each agent has a distinct role, its own workspace, memory, and skills. The CEO a
 
 ```bash
 # Initialize a new startup
-./bin/sf-init.sh "AI-powered pet nutrition recommendations"
+./bin/sf init "AI-powered pet nutrition recommendations"
 
-# Start the factory
-openclaw agent --workspace ~/startups/ai-powered-pet-nutrition \
-  --message "Begin Phase 1: Discovery"
+# Open the visual management dashboard
+./bin/sf dashboard
+
+# Start the agent pipeline
+./bin/sf run
 ```
 
 ## The Team
@@ -71,6 +73,9 @@ All agents shift to cron-driven operations — competitive monitoring, content c
 ├── SOUL.md                 # CEO personality
 ├── MEMORY.md               # Shared memory
 ├── HEARTBEAT.md            # Cron-driven check-ins
+├── dashboard/
+│   ├── index.html          # Visual management dashboard
+│   └── state.json          # Live project state (auto-generated)
 ├── .openclaw/
 │   └── openclaw.json       # Multi-agent routing config
 ├── agents/
